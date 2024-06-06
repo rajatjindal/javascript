@@ -228,8 +228,10 @@ export interface PromiseHttpLibrary {
 }
 
 export function wrapHttpLibrary(promiseHttpLibrary: PromiseHttpLibrary): HttpLibrary {
+    console.log("inside wrapHttpLibrary")
   return {
     send(request: RequestContext): Observable<ResponseContext> {
+        console.log("inside send func")
       return from(promiseHttpLibrary.send(request));
     }
   }

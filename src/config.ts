@@ -7,7 +7,8 @@ import path = require('path');
 import { Headers, RequestInit } from 'node-fetch';
 import * as api from './api';
 import { Authenticator } from './auth';
-import { AzureAuth } from './azure_auth';
+
+// import { AzureAuth } from './azure_auth';
 import {
     Cluster,
     ConfigOptions,
@@ -20,17 +21,18 @@ import {
     newUsers,
     User,
 } from './config_types';
-import { ExecAuth } from './exec_auth';
-import { FileAuth } from './file_auth';
-import { GoogleCloudPlatformAuth } from './gcp_auth';
+// import { ExecAuth } from './exec_auth';
+// import { FileAuth } from './file_auth';
+// import { GoogleCloudPlatformAuth } from './gcp_auth';
 import {
+    HttpLibrary,
     AuthMethodsConfiguration,
     Configuration,
     createConfiguration,
     SecurityAuthentication,
     ServerConfiguration,
 } from './gen';
-import { OpenIDConnectAuth } from './oidc_auth';
+// import { OpenIDConnectAuth } from './oidc_auth';
 // import WebSocket = require('isomorphic-ws');
 import child_process = require('child_process');
 
@@ -56,11 +58,11 @@ export interface ApiType {}
 
 export class KubeConfig implements SecurityAuthentication {
     private static authenticators: Authenticator[] = [
-        new AzureAuth(),
-        new GoogleCloudPlatformAuth(),
-        new ExecAuth(),
-        new FileAuth(),
-        new OpenIDConnectAuth(),
+        // new AzureAuth(),
+        // new GoogleCloudPlatformAuth(),
+        // new ExecAuth(),
+        // new FileAuth(),
+        // new OpenIDConnectAuth(),
     ];
 
     /**
@@ -456,7 +458,7 @@ export class KubeConfig implements SecurityAuthentication {
         );
     }
 
-    public makeApiClient<T extends ApiType>(apiClientType: ApiConstructor<T>): T {
+    public makeApiClient<T extends ApiType>(apiClientType: ApiConstructor<T>, httpApi: HttpLibrary): T {
         const cluster = this.getCurrentCluster();
         if (!cluster) {
             throw new Error('No active cluster!');
@@ -468,12 +470,32 @@ export class KubeConfig implements SecurityAuthentication {
         const config: Configuration = createConfiguration({
             baseServer: baseServerConfig,
             authMethods: authConfig,
+            httpApi: httpApi,
         });
 
         const apiClient = new apiClientType(config);
 
         return apiClient;
     }
+
+    // public makeApiClient<T extends ApiType>(apiClientType: ApiConstructor<T>): T {
+    //     const cluster = this.getCurrentCluster();
+    //     if (!cluster) {
+    //         throw new Error('No active cluster!');
+    //     }
+    //     const authConfig: AuthMethodsConfiguration = {
+    //         default: this,
+    //     };
+    //     const baseServerConfig: ServerConfiguration<{}> = new ServerConfiguration<{}>(cluster.server, {});
+    //     const config: Configuration = createConfiguration({
+    //         baseServer: baseServerConfig,
+    //         authMethods: authConfig,
+    //     });
+
+    //     const apiClient = new apiClientType(config);
+
+    //     return apiClient;
+    // }
 
     public makePathsAbsolute(rootDirectory: string): void {
         this.clusters.forEach((cluster: Cluster) => {

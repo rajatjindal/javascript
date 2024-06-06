@@ -15,6 +15,7 @@ import { KubernetesListObject, KubernetesObject } from './types';
 import { ObjectSerializer } from './util';
 import { from, mergeMap, of } from './gen/rxjsStub';
 import { PatchStrategy } from './patch';
+import { IsomorphicFetchHttpLibrary as DefaultHttpLibrary, HttpLibrary } from './gen';
 
 /** Kubernetes API verbs. */
 type KubernetesApiAction = 'create' | 'delete' | 'patch' | 'read' | 'list' | 'replace';
@@ -38,7 +39,13 @@ export class KubernetesObjectApi {
      * @return Properly instantiated [[KubernetesObjectApi]] object
      */
     public static makeApiClient(kc: KubeConfig): KubernetesObjectApi {
-        const client = kc.makeApiClient(KubernetesObjectApi);
+        const client = kc.makeApiClient(KubernetesObjectApi, new DefaultHttpLibrary());
+        client.setDefaultNamespace(kc);
+        return client;
+    }
+
+    public static makeApiClient2(kc: KubeConfig, httpApi: HttpLibrary): KubernetesObjectApi {
+        const client = kc.makeApiClient(KubernetesObjectApi, httpApi);
         client.setDefaultNamespace(kc);
         return client;
     }
@@ -561,16 +568,18 @@ export class KubernetesObjectApi {
         requestContext.setHeaderParam('Accept', 'application/json, */*;q=0.8');
 
         try {
+            console.log("ok making call?")
             const getApiResponse = await this.requestPromise<V1APIResourceList>(
                 requestContext,
                 'V1APIResourceList',
             );
+            console.log("ok did we make it this far.")
             this.apiVersionResourceCache[apiVersion] = getApiResponse;
             return this.apiVersionResourceCache[apiVersion].resources.find((r) => r.kind === kind);
         } catch (e) {
-            if (e instanceof Error) {
-                e.message = `Failed to fetch resource metadata for ${apiVersion}/${kind}: ${e.message}`;
-            }
+            // if (e instanceof Error) {
+            //     e.message = `Failed to fetch resource metadata for ${apiVersion}/${kind}: ${e.stacktrace}`;
+            // }
             throw e;
         }
     }
@@ -604,21 +613,27 @@ export class KubernetesObjectApi {
         type?: string,
         options?: Configuration,
     ): Promise<T> {
+        console.log(1)
         const _config = options || this.configuration;
 
         let authMethod: SecurityAuthentication | undefined;
         // Apply auth methods
         authMethod = _config.authMethods.BearerToken;
+        console.log(2)
         if (authMethod?.applySecurityAuthentication) {
+            console.log(3)
             await authMethod?.applySecurityAuthentication(requestContext);
         }
+        console.log(4)
 
         const defaultAuth: SecurityAuthentication | undefined =
             options?.authMethods?.default || this.configuration?.authMethods?.default;
+            console.log(5)
         if (defaultAuth?.applySecurityAuthentication) {
+            console.log(6)
             await defaultAuth?.applySecurityAuthentication(requestContext);
         }
-
+        console.log(7)
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(Promise.resolve(requestContext));
         for (const middleware of this.configuration.middleware) {
@@ -626,7 +641,7 @@ export class KubernetesObjectApi {
                 mergeMap((ctx: RequestContext) => middleware.pre(ctx)),
             );
         }
-
+        console.log(8)
         return middlewarePreObservable
             .pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx)))
             .pipe(
