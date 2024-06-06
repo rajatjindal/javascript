@@ -31,7 +31,7 @@ import {
     ServerConfiguration,
 } from './gen';
 import { OpenIDConnectAuth } from './oidc_auth';
-import WebSocket = require('isomorphic-ws');
+// import WebSocket = require('isomorphic-ws');
 import child_process = require('child_process');
 
 const SERVICEACCOUNT_ROOT: string = '/var/run/secrets/kubernetes.io/serviceaccount';
@@ -169,7 +169,7 @@ export class KubeConfig implements SecurityAuthentication {
         };
     }
 
-    public async applyToHTTPSOptions(opts: https.RequestOptions | WebSocket.ClientOptions): Promise<void> {
+    public async applyToHTTPSOptions(opts: https.RequestOptions): Promise<void> {
         const user = this.getCurrentUser();
 
         await this.applyOptions(opts);
@@ -509,7 +509,7 @@ export class KubeConfig implements SecurityAuthentication {
         return this.getContextObject(this.currentContext);
     }
 
-    private applyHTTPSOptions(opts: https.RequestOptions | WebSocket.ClientOptions): void {
+    private applyHTTPSOptions(opts: https.RequestOptions): void {
         const cluster = this.getCurrentCluster();
         const user = this.getCurrentUser();
         if (!user) {
@@ -538,7 +538,7 @@ export class KubeConfig implements SecurityAuthentication {
     }
 
     private async applyAuthorizationHeader(
-        opts: https.RequestOptions | WebSocket.ClientOptions,
+        opts: https.RequestOptions,
     ): Promise<void> {
         const user = this.getCurrentUser();
         if (!user) {
@@ -560,7 +560,7 @@ export class KubeConfig implements SecurityAuthentication {
         }
     }
 
-    private async applyOptions(opts: https.RequestOptions | WebSocket.ClientOptions): Promise<void> {
+    private async applyOptions(opts: https.RequestOptions): Promise<void> {
         this.applyHTTPSOptions(opts);
         await this.applyAuthorizationHeader(opts);
     }
